@@ -1,0 +1,255 @@
+#include "backend.h"
+
+#test init_game
+initGame();
+GameInfo_t game_info = updateCurrentState();
+for(int i = 0; i < GAME_FIELD_HEIGHT; i++) {
+    for(int j = 0; j < GAME_FIELD_WIDTH; j++) {
+        ck_assert_int_eq(game_info.field[i][j], 0);
+    }
+}
+for(int i = 0; i < FIGURE_SIZE; i++) {
+    for(int j = 0; j < FIGURE_SIZE; j++) {
+        ck_assert_int_eq(game_info.next[i][j], 0);
+    }
+}
+ck_assert_int_eq(game_info.score, 0);
+printf("High score = %d\n", game_info.high_score);
+ck_assert_int_eq(game_info.level, 1);
+ck_assert_int_eq(game_info.speed, 1000);
+ck_assert_int_eq(game_info.pause, START);
+deleteGameInfo(&game_info);
+
+
+#test terminate_action__start
+initGame();
+userInput(Terminate, false);
+GameInfo_t game_info = updateCurrentState();
+ck_assert_int_eq(game_info.pause, EXIT);
+deleteGameInfo(&game_info);
+
+#test generate_figures
+initGame();
+GameInfo_t game_info = updateCurrentState();
+Figure_t f_next = funcForTestFigureNext();
+for(int i = 0; i < FIGURE_SIZE; i++) {
+    for(int j = 0; j < FIGURE_SIZE; j++) {
+        ck_assert_int_eq(f_next.matrix[i][j], game_info.next[i][j]);
+    }
+}
+ck_assert_int_eq(f_next.x, 0);
+ck_assert_int_eq(f_next.y, 0);
+ck_assert_int_eq(f_next.rotation, 0);
+deleteGameInfo(&game_info);
+
+#test start_action__start
+initGame();
+userInput(Start, false);
+GameInfo_t game_info = updateCurrentState();
+ck_assert_int_eq(game_info.pause, MOVEMENT);
+deleteGameInfo(&game_info);
+
+#test begin_position_and_move_figure
+initGame();
+userInput(Start, false);
+GameInfo_t game_info = updateCurrentState();
+Figure_t f_now = funcForTestFigureNow();
+ck_assert_int_eq(f_now.y, START_POSITION_Y);
+ck_assert_int_eq(f_now.x, START_POSITION_X);
+userInput(Right, false);
+f_now = funcForTestFigureNow();
+ck_assert_int_eq(f_now.x, START_POSITION_X + 1);
+userInput(Left, false);
+userInput(Left, false);
+f_now = funcForTestFigureNow();
+ck_assert_int_eq(f_now.x, START_POSITION_X - 1);
+moveFigureDown();
+f_now = funcForTestFigureNow();
+ck_assert_int_eq(f_now.y, START_POSITION_Y + 1);
+deleteGameInfo(&game_info);
+
+#test pause_on_off
+initGame();
+userInput(Start, false);
+GameInfo_t game_info = updateCurrentState();
+userInput(Pause, false);
+game_info = updateCurrentState();
+ck_assert_int_eq(game_info.pause, PAUSE);
+userInput(Pause, false);
+game_info = updateCurrentState();
+ck_assert_int_eq(game_info.pause, MOVEMENT);
+deleteGameInfo(&game_info);
+
+#test rotation_action
+initGame();
+userInput(Start, false);
+GameInfo_t game_info = updateCurrentState();
+Figure_t f_now = funcForTestFigureNow();
+int r1 = f_now.rotation;
+userInput(Action, false);
+f_now = funcForTestFigureNow();
+int r2 = f_now.rotation;
+int r_result = r2 - r1;
+ck_assert_int_eq(r_result, 1);
+deleteGameInfo(&game_info);
+
+#test down_action
+initGame();
+userInput(Start, false);
+GameInfo_t game_info = updateCurrentState();
+userInput(Down, false);
+game_info = updateCurrentState();
+ck_assert_int_eq(game_info.pause, BEGIN_POSITION);
+deleteGameInfo(&game_info);
+
+#test up_action
+initGame();
+userInput(Start, false);
+GameInfo_t game_info_1 = updateCurrentState();
+Figure_t f_now_1 = funcForTestFigureNow();
+userInput(Up, false);
+Figure_t f_now_2 = funcForTestFigureNow();
+GameInfo_t game_info_2 = updateCurrentState();
+ck_assert_int_eq(game_info_1.pause, game_info_2.pause);
+ck_assert_int_eq(f_now_1.y, f_now_2.y);
+ck_assert_int_eq(f_now_1.x, f_now_2.x);
+game_info_2.field = NULL;
+game_info_2.next = NULL;
+deleteGameInfo(&game_info_1);
+
+#test set_high_score
+initGame();
+GameInfo_t game_info = updateCurrentState();
+setHighScore();
+printf("!!! A file should be created: high_score.txt\n");
+deleteGameInfo(&game_info);
+
+#test game_log
+initGame();
+GameInfo_t game_info = updateCurrentState();
+gameLog("Test is done!");
+printf("!!! A file should be created: game_log.txt\n");
+printf("!!! Text in the game_log.txt should be: Test is Done!\n");
+deleteGameInfo(&game_info);
+
+#test figure_o
+Figure_t f;
+f.name = O;
+f.rotation = 3;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+
+#test figure_i_1
+Figure_t f;
+f.name = I;
+f.rotation = 1;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[2][0], 1);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[3][0], 1);
+
+#test figure_i_0
+Figure_t f;
+f.name = I;
+f.rotation = 0;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[0][2], 1);
+ck_assert_int_eq(f.matrix[0][3], 1);
+
+#test figure_s_0
+Figure_t f;
+f.name = S;
+f.rotation = 0;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[0][2], 1);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+
+#test figure_s_1
+Figure_t f;
+f.name = S;
+f.rotation = 1;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[2][1], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+
+#test figure_z
+Figure_t f;
+f.name = Z;
+f.rotation = 0;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+ck_assert_int_eq(f.matrix[1][2], 1);
+
+#test figure_l_2
+Figure_t f;
+f.name = L;
+f.rotation = 2;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+ck_assert_int_eq(f.matrix[0][2], 1);
+ck_assert_int_eq(f.matrix[1][2], 1);
+
+#test figure_l_0
+Figure_t f;
+f.name = L;
+f.rotation = 0;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[0][2], 1);
+ck_assert_int_eq(f.matrix[1][0], 1);
+
+
+#test figure_j_3
+Figure_t f;
+f.name = J;
+f.rotation = 3;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[2][1], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+ck_assert_int_eq(f.matrix[2][0], 1);
+
+#test figure_j_2
+Figure_t f;
+f.name = J;
+f.rotation = 2;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[1][2], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+ck_assert_int_eq(f.matrix[0][0], 1);
+
+#test figure_t_0
+Figure_t f;
+f.name = T;
+f.rotation = 0;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[0][1], 1);
+ck_assert_int_eq(f.matrix[0][2], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+
+#test figure_t_1
+Figure_t f;
+f.name = T;
+f.rotation = 1;
+identifyFigure(&f);
+ck_assert_int_eq(f.matrix[0][0], 1);
+ck_assert_int_eq(f.matrix[1][0], 1);
+ck_assert_int_eq(f.matrix[2][0], 1);
+ck_assert_int_eq(f.matrix[1][1], 1);
+

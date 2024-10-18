@@ -1,0 +1,30 @@
+#test equality_1
+matrix_t A;
+matrix_t B;
+s21_create_matrix(3, 3, &A);
+s21_create_matrix(3, 3, &B);
+int err = s21_eq_matrix(&A, &B);
+ck_assert_int_eq(err, SUCCESS);
+s21_remove_matrix(&A);
+s21_remove_matrix(&B);
+
+#test equality_2
+matrix_t A;
+matrix_t B;
+s21_create_matrix(1, 3, &A);
+s21_create_matrix(3, 3, &B);
+int err = s21_eq_matrix(&A, &B);
+ck_assert_int_eq(err, FAILURE);
+s21_remove_matrix(&A);
+s21_remove_matrix(&B);
+
+#test equality_3
+matrix_t A;
+matrix_t B;
+s21_create_matrix(3, 3, &A);
+s21_create_matrix(3, 3, &B);
+A.matrix[1][1] = 5;
+int err = s21_eq_matrix(&A, &B);
+ck_assert_int_eq(err, FAILURE);
+s21_remove_matrix(&A);
+s21_remove_matrix(&B);

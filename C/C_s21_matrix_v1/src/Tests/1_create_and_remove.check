@@ -1,0 +1,34 @@
+#include "s21_matrix.h"
+
+#suite s21_matrix
+
+#test create_and_remove_1
+matrix_t M;
+int error = s21_create_matrix(3, 3, &M);
+s21_remove_matrix(&M);
+ck_assert_int_eq(error, OK);
+
+#test create_and_remove_2
+matrix_t M;
+int error = s21_create_matrix(0, 0, &M);
+s21_remove_matrix(&M);
+ck_assert_int_eq(error, ERROR_INCORRECT_MATRIX);
+
+#test create_and_remove_3
+matrix_t M;
+int error = s21_create_matrix(3, 0, &M);
+s21_remove_matrix(&M);
+ck_assert_int_eq(error, ERROR_INCORRECT_MATRIX);
+
+#test create_and_remove_4
+matrix_t M;
+int error = s21_create_matrix(-4, 3, &M);
+s21_remove_matrix(&M);
+ck_assert_int_eq(error, ERROR_INCORRECT_MATRIX);
+
+#test create_and_remove_5
+matrix_t M;
+int error = s21_create_matrix(-3, -3, &M);
+s21_remove_matrix(&M);
+ck_assert_int_eq(error, ERROR_INCORRECT_MATRIX);
+
